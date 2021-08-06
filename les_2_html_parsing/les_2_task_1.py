@@ -74,13 +74,9 @@ def get_vacs_hh(request_vacancy, max_pages=float('inf')):
             except AttributeError:
                 salary = None
             if salary:
-                min_sal = split_salary(salary, '–')[0]
-                max_sal = split_salary(salary, '–')[1]
-                currency = split_salary(salary, '–')[2]
+                min_sal, max_sal, currency = split_salary(salary, '–')
             else:
-                min_sal = None
-                max_sal = None
-                currency = None
+                min_sal, max_sal, currency = None, None, None
 
             vac_dict = {'vacancy_name': name, 'vacancy_reference': ref_vac, 'employer': employer,
                         'employer_reference': ref_emp, 'location': location, 'service': 'HeadHunter',
@@ -123,13 +119,9 @@ def get_vacs_sjob(request_vacancy, max_pages=float('inf')):
                 .getText().replace(u'\xa0', u' ')
             salary = None if salary == 'По договорённости' else salary
             if salary:
-                min_sal = split_salary(salary, '—')[0]
-                max_sal = split_salary(salary, '—')[1]
-                currency = split_salary(salary, '—')[2]
+                min_sal, max_sal, currency = split_salary(salary, '—')
             else:
-                min_sal = None
-                max_sal = None
-                currency = None
+                min_sal, max_sal, currency = None, None, None
 
             try:
                 employer_block = next(vac.find('span', {'class': 'f-test-text-vacancy-item-company-name'}).children)
@@ -164,7 +156,7 @@ request = input('Type a request for considering vacancies:\n')
 df = pd.DataFrame(get_vacs_hh(request, 5) + get_vacs_sjob(request))
 
 file_path = 'data_scientist_response.csv'
-df.to_csv(file_path, index=False)
+# df.to_csv(file_path, index=False)
 
 print(f'{df.shape[0]} results of request are saved in file: {file_path}')
 print(df[['vacancy_name', 'min_salary']].head(10))
