@@ -17,24 +17,36 @@ from bs4 import BeautifulSoup as bs
 import pandas as pd
 
 
-def split_salary(sal, sep):
-    sal_list = sal.split(sep)
-    if len(sal_list) > 1:
-        min_sal = int(sal_list[0].replace(' ', ''))
-        max_sal = int(''.join(sal_list[1].split()[:-1]))
-        currency = sal_list[1].split()[-1]
-    else:
-        sal_list = sal_list[0].split()
-        currency = sal_list[-1]
-        if sal_list[0] == 'от':
-            min_sal = int(''.join(sal_list[1:-1]))
-            max_sal = None
-        elif sal_list[0] == 'до':
-            min_sal = None
-            max_sal = int(''.join(sal_list[1:-1]))
+def split_salary(sal):
+    sal = sal.replace(' ', '')
+    sal_list = []
+    word, num = '', ''
+    for char in sal:
+        if char.isdigit():
+            if word != '':
+                sal_list.append(word)
+                word = ''
+            num += char
         else:
-            min_sal = int(''.join(sal_list[:-1]))
-            max_sal = int(''.join(sal_list[:-1]))
+            if num != '':
+                sal_list.append(num)
+                num = ''
+            word += char
+    if word != '':
+        sal_list.append(word)
+    else:
+        sal_list.append(num)
+
+    if sal_list[0].isdigit():
+        if len(sal_list) > 3:
+            min_sal, max_sal, currency = int(sal_list[0]), int(sal_list[2]), sal_list[3]
+        else:
+            min_sal, max_sal, currency = int(sal_list[0]), int(sal_list[0]), sal_list[1]
+    elif sal_list[0] == 'от':
+        min_sal, max_sal, currency = int(sal_list[1]), None, sal_list[2]
+    else:
+        min_sal, max_sal, currency = None, int(sal_list[1]), sal_list[2]
+
     return min_sal, max_sal, currency
 
 
@@ -44,6 +56,7 @@ def get_vacs_hh(request_vacancy, max_pages=float('inf')):
                              'AppleWebKit/537.36 (KHTML, like Gecko)'
                              'Chrome/92.0.4515.107 Safari/537.36'}
     params = {'text': request_vacancy,
+              'items_on_page': '20',
               'clusters': 'true',
               'enable_snippets': 'true',
               'salary': None,
@@ -74,7 +87,7 @@ def get_vacs_hh(request_vacancy, max_pages=float('inf')):
             except AttributeError:
                 salary = None
             if salary:
-                min_sal, max_sal, currency = split_salary(salary, '–')
+                min_sal, max_sal, currency = split_salary(salary)
             else:
                 min_sal, max_sal, currency = None, None, None
 
@@ -116,10 +129,10 @@ def get_vacs_sjob(request_vacancy, max_pages=float('inf')):
             ref_vac = url + name_block.get('href')
 
             salary = vac.find('span', {'class': '_1h3Zg _2Wp8I _2rfUm _2hCDz _2ZsgW'})\
-                .getText().replace(u'\xa0', u' ')
+                .getText().replace(u'\xa0', u'')
             salary = None if salary == 'По договорённости' else salary
             if salary:
-                min_sal, max_sal, currency = split_salary(salary, '—')
+                min_sal, max_sal, currency = split_salary(salary)
             else:
                 min_sal, max_sal, currency = None, None, None
 
@@ -152,11 +165,12 @@ def get_vacs_sjob(request_vacancy, max_pages=float('inf')):
     return vacancies_data
 
 
-request = input('Type a request for considering vacancies:\n')
-df = pd.DataFrame(get_vacs_hh(request, 5) + get_vacs_sjob(request))
+request = 'data scientist'
+# request = input('Type a request for considering vacancies:\n')
+df = pd.DataFrame(get_vacs_hh(request) + get_vacs_sjob(request))
 
 file_path = 'data_scientist_response.csv'
-# df.to_csv(file_path, index=False)
+df.to_csv(file_path, index=False)
 
 print(f'{df.shape[0]} results of request are saved in file: {file_path}')
 print(df[['vacancy_name', 'min_salary']].head(10))
