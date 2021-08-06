@@ -143,7 +143,7 @@ def get_vacs_sjob(request_vacancy, max_pages=float('inf')):
                 .getText().replace(u'\xa0', u' ')
 
             vac_dict = {'vacancy_name': name, 'vacancy_reference': ref_vac, 'employer': employer,
-                        'employer_reference': ref_emp, 'location': location, 'service': 'HeadHunter',
+                        'employer_reference': ref_emp, 'location': location, 'service': 'SuperJob',
                         'min_salary': min_sal, 'max_salary': max_sal, 'vacancy_currency': currency}
             vacancies_data.append(vac_dict)
 
